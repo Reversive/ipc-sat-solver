@@ -1,16 +1,24 @@
-include Makefile.inc
+include makefile.inc
 
 SOURCES=$(wildcard *.c)
 OBJECTS=$(SOURCES:.c=.o)
-OUT = solve
 
-all: $(OUT)
 
-$(OUT): $(OBJECTS)
+SOLVE_OUT = solve
+PROCESS_OUT = process
+
+all: $(SOLVE_OUT) $(PROCESS_OUT)
+
+$(SOLVE_OUT): $(OBJECTS)
+
+$(PROCESS_OUT):
+	cd process; make all	
 
 %.o: %.c
 	$(CC) $(CFLAGS) -I./include -c $< -o $@
 
 clean:
 	rm -rf *.o solve
-.PHONY: all clean
+	cd process; make clean
+
+.PHONY: all clean process
