@@ -6,12 +6,15 @@ PROCESS_OBJECTS=$(PROCESS_SOURCES:.c=.o)
 SLAVE_SOURCES=slave.c
 SLAVE_OBJECTS=$(SLAVE_SOURCES:.c=.o)
 
+COMMUNICATION_SOURCES=communication/pipe.c
+COMMUNICATION_OBJECTS=$(COMMUNICATION_SOURCES:.c=.o)
+
 MASTER_OUT = master
 SLAVE_OUT = slave
 
 all: $(MASTER_OUT) $(SLAVE_OUT) bin_move
 
-$(MASTER_OUT): $(PROCESS_OBJECTS)
+$(MASTER_OUT): $(COMMUNICATION_OBJECTS) $(PROCESS_OBJECTS)
 
 $(SLAVE_OUT): $(SLAVE_OBJECTS)
 
@@ -26,4 +29,5 @@ bin_move:
 
 clean:
 	rm -rf *.o bin/
+	rm -rf communication/*.o
 .PHONY: all clean

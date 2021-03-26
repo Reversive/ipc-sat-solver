@@ -11,6 +11,7 @@
 #define SUCCESS 1
 #define FAILURE 0
 
+
 int is_valid_file(const char *path);
 int is_valid_batch(char **paths, int len);
 

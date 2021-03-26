@@ -1,0 +1,11 @@
+master
+    - [ ] break-loop conditions (for(;;))
+    - [ ] queue files to non-working slaves
+    - [ ] payload read should be saved into a file not sent to STD_OUT
+    - [ ] add view support (shared mem)
+    - [ ] remove waitpid(), master should end slaves by closing its pipe
+
+
+slave
+    - [ ] sat solving
+

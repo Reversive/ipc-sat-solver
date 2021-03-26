@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include "utils.h"
-
+#define MAX_ARG_COUNT 1024
 
 
 #endif

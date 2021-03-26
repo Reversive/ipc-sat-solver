@@ -2,4 +2,13 @@
 #define ERROR_CODES_H
 #define BAD_ARG_COUNT -5
 #define BAD_ARG_FILE -6
+#define PIPE_FAILURE -7
+#define PIPE_WRITE_FAILURE -8
+#define PIPE_CLOSE_FAILURE -9
+#define SLAVE_FORK_FAILURE -10
+#define PIPE_REDIRECT_FAILURE -11
+#define EXECV_FAILURE -12
+#define SYS_FAILURE -1
+#define SELECT_FAILURE -13
+#define FD_ISSET_FAILURE -14
 #endif

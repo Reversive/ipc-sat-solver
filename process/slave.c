@@ -1,15 +1,21 @@
 #include "include/slave.h"
 
+
 int main(
     int argc, 
     char **argv) 
 {
-    printf("[SLAVE] I was summoned!! my arg count is %d\n", argc);
+    char payload_size = 0;
+    char *payload = NULL;
 
-    for(int i = 0; i < argc; i++)
+    while( read(STDIN, &payload_size, 1) == 1 )
     {
-        printf("Arg[%d]: %s\n", i, argv[i]);
+        payload = malloc(payload_size);
+        if( read(STDIN, payload, payload_size) == payload_size )
+        {
+            write(STDOUT, &payload_size, 1);
+            write(STDOUT, payload, payload_size);
+        }
     }
-    
-    return 0;
+    free(payload);
 }

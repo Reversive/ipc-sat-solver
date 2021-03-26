@@ -11,6 +11,13 @@ int main(
     }
 
     int file_count = argc - FIRST_ARG;
+    
+    if(file_count > MAX_ARG_COUNT)
+    {
+        printf("Can't process more than 1024 files.\nTerminating Program...\n");
+        exit(BAD_ARG_FILE);
+    }
+
     char **n_argv = argv + FIRST_ARG;
     if(is_valid_batch(n_argv, file_count))
     {

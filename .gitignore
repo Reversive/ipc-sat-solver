@@ -1,4 +1,8 @@
 .vscode
+solve
+slave
+master
+
 
 # Prerequisites
 *.d
