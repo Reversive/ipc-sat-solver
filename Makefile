@@ -20,5 +20,6 @@ $(PROCESS_OUT):
 clean:
 	rm -rf *.o solve
 	cd process; make clean
+	cd communication; rm -rf *.o
 
 .PHONY: all clean process

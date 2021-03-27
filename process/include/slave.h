@@ -7,7 +7,5 @@
 #include "../../communication/include/pipe.h"
 #define STDIN 0
 #define STDOUT 1
-#define MAX_PATH_SIZE 128
-#define READ_CHUNK 4
-
+#define MAX_FILE_SIZE 16384
 #endif

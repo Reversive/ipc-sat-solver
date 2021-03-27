@@ -14,14 +14,14 @@ int main(
     setbuf(stdout, NULL);
     int file_count = argc;
     char **file_names = argv;
-    int slave_count = file_count >= STARTING_FILE_LIMIT ? MAX_SLAVE_COUNT : file_count;
+    int slave_count = file_count >= MAX_SLAVE_COUNT ? MAX_SLAVE_COUNT : file_count;
     open_pipe_array(master_fd, slave_count);
     open_pipe_array(slave_fd, slave_count);
     distribute_files(master_fd, file_names, file_count, slave_count);
     summon_slaves(slave_count);
-    sleep(3);
-    close_pipe(master_fd, OUT, slave_count);
+    sleep(2); // time for view to spawn
 
+    close_pipe(master_fd, OUT, slave_count); // send signal to slaves to exit
     for(int i = 0; i < slave_count; i++)
     {
         int fr;
@@ -70,9 +70,12 @@ void summon_slaves(
 
         if(pid == 0)
         {
-            close_pipe(slave_fd, IN, slave_count);
             redirect_pipe(master_fd, i, IN, STDIN, slave_count);
+            close_pipe(master_fd, IN, slave_count);
+            close_pipe(master_fd, OUT, slave_count);
             //redirect_pipe(slave_fd, i, OUT, STDOUT, slave_count);
+            //close_pipe(slave_fd, IN, slave_count);
+            //close_pipe(slave_fd, OUT, slave_count);  
             execv("./process/bin/slave", argv);
             perror("execv()");
             exit(EXECV_FAILURE);

@@ -43,6 +43,7 @@ void write_pipe(
 
 void close_fd(int fd)
 {
+    fflush(stdout);
     if( close(fd) == SYS_FAILURE )
     {
         perror("close() close_fd");
@@ -98,10 +99,6 @@ void redirect_pipe(
                 perror("dup2()");
                 exit(PIPE_REDIRECT_FAILURE);
             }
-        }
-        else
-        {
-            close_fd(fda[PIPE_SIZE * i + from]);
         }
     }
 }

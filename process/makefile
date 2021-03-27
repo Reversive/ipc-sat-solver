@@ -1,5 +1,6 @@
 include makefile.inc
 
+
 PROCESS_SOURCES=master.c
 PROCESS_OBJECTS=$(PROCESS_SOURCES:.c=.o)
 
@@ -29,5 +30,4 @@ bin_move:
 
 clean:
 	rm -rf *.o bin/
-	rm -rf communication/*.o
 .PHONY: all clean
