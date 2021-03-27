@@ -5,17 +5,15 @@ int main(
     int argc, 
     char **argv) 
 {
-    char payload_size = 0;
-    char *payload = NULL;
-
-    while( read(STDIN, &payload_size, 1) == 1 )
-    {
-        payload = malloc(payload_size);
-        if( read(STDIN, payload, payload_size) == payload_size )
-        {
-            write(STDOUT, &payload_size, 1);
-            write(STDOUT, payload, payload_size);
-        }
+    
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    while ((read = getline(&line, &len, stdin)) != -1) {
+        printf("[CHILD %d] Retrieved line of length %zu : %s\n", getpid(), read, line);
+        fflush(stdout);
     }
-    free(payload);
+    free(line);
+    return 0;
 }
+
