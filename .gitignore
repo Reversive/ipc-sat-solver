@@ -3,9 +3,7 @@ solve
 slave
 master
 .bash_history
-
-samples/*
-samples
+result.txt
 # Prerequisites
 *.d
 
