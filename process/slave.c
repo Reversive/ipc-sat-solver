@@ -38,6 +38,10 @@ int main(
         perror("Problem with getline()");
         exit(EXIT_FAILURE);
     }
+    char bf[20];
+    sprintf(bf, "Sali\n");
+    write(2, bf, strlen(bf) + 1);
+    close_fd(1);
     free(path);
     return 0;
 }

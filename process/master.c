@@ -23,28 +23,18 @@ int main(
     slave_container sc[slave_count];
     init_container_array(sc, slave_count);
     int status = RUNNING;
-
+    int flag = 0;
     while(status == RUNNING)
     {
         fd_set rfds;
-        struct timeval tv;
-        tv.tv_sec = 0;
-        tv.tv_usec = 0;
         FD_ZERO(&rfds);
         int fdmax = set_fd_array(slave_fd, &rfds, slave_count);
-        int retval = select(fdmax, &rfds, NULL, NULL, &tv);
+        int retval = select(fdmax, &rfds, NULL, NULL, NULL);
         switch (retval)
         {
         case SYS_FAILURE:
             perror("select()");
             exit(SELECT_FAILURE);
-
-        case TIMEOUT:
-            if(queue.queue_read == queue.queue_size)
-            {
-                status = STOP;
-            }
-            break;
         
         default:
             for(int i = 0; i < slave_count; i++)
@@ -59,7 +49,12 @@ int main(
                         perror("read()");
                         exit(EXIT_FAILURE);
                     }
-                    else if(bytes_read == CHUNK_SIZE)
+                    else if(bytes_read == ZERO)
+                    {
+                        printf("Reached here\n");
+                        status = STOP;
+                    }
+                    else if(bytes_read <= CHUNK_SIZE)
                     {
                         char *offset_ptr = strchr(sc[i].buffer + sc[i].pos, DELIM);
                         if( offset_ptr != NULL)
@@ -73,6 +68,11 @@ int main(
                             if(queue.queue_pos < queue.queue_size)
                             {
                                 queue_next_file(fdw);
+                            }
+                            else if(flag == 0)
+                            {
+                                flag = 1;
+                                close_pipe(master_fd, OUT, slave_count);
                             }
 
                         }
@@ -93,6 +93,11 @@ int main(
                         {
                             queue_next_file(fdw);
                         }
+                        else if(flag == 0)
+                        {
+                            flag = 1;
+                            close_pipe(master_fd, OUT, slave_count);
+                        }
                     }
                 }
                 
@@ -102,9 +107,7 @@ int main(
        
     }
 
-    close_pipe(master_fd, OUT, slave_count); // send signal to slaves to exit
     close_pipe(master_fd, IN, slave_count);
-    close_pipe(slave_fd, OUT, slave_count);
     close_pipe(slave_fd, IN, slave_count);
 
     for(int i = 0; i < slave_count; i++)
