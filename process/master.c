@@ -64,7 +64,7 @@ int main(
                             fwrite(sc[i].buffer, sizeof(char), size, fp);
                             fwrite("\n\n", sizeof(char), 2, fp);
                             fclose(fp);
-                            reset_container(sc, i);
+                            fix_internal_buffer(i, sc, offset_ptr);
                             if(queue.queue_pos < queue.queue_size)
                             {
                                 queue_next_file(fdw);
@@ -117,6 +117,21 @@ int main(
         waitpid(slave_pid[i], &fr, 0);
     }
 
+}
+
+
+void fix_internal_buffer(
+    int idx, 
+    slave_container * sc, 
+    char * delim_offset)
+{
+    char * chunk_pos = sc[idx].buffer + sc[idx].pos;
+    int new_file_pos = CHUNK_SIZE -  (delim_offset - chunk_pos) ;
+    char tmp[new_file_pos];
+    memcpy(tmp, chunk_pos + CHUNK_SIZE - new_file_pos, new_file_pos);
+    reset_container(sc, idx);
+    memcpy(sc[idx].buffer, tmp, new_file_pos);
+    sc[idx].pos = new_file_pos;
 }
 
 
