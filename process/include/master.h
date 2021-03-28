@@ -20,7 +20,7 @@
 
 #define KILL_SIGNAL 9
 
-#define MAX_SLAVE_COUNT 15
+#define MAX_SLAVE_COUNT 1
 #define PIPE_ARRAY_SIZE PIPE_SIZE * MAX_SLAVE_COUNT 
 
 #define VIEW_SLEEP_INTERVAL 2
@@ -31,6 +31,5 @@ void summon_slaves(int slave_count);
 void kill_previous_slaves(int last_slave);
 int check_fd_array_set(int * fda, fd_set * fds, int slave_count);
 void queue_next_file(int fd);
-void fix_internal_buffer(int idx, slave_container * sc, char * delim_offset);
 
 #endif

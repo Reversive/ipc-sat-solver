@@ -12,8 +12,8 @@ int main(
     char **argv) 
 {
     setbuf(stdout, NULL);
-    int file_count = argc;
-    char **file_names = argv;
+    int file_count = argc ;
+    char **file_names = argv ;
     int slave_count = file_count >= MAX_SLAVE_COUNT ? MAX_SLAVE_COUNT : file_count;
     open_pipe_array(master_fd, slave_count);
     open_pipe_array(slave_fd, slave_count);
@@ -59,12 +59,12 @@ int main(
                         char *offset_ptr = strchr(sc[i].buffer + sc[i].pos, DELIM);
                         if( offset_ptr != NULL)
                         {
-                            int size = offset_ptr - sc[i].buffer;
+                            int size = offset_ptr - sc[i].buffer ;
                             FILE *fp = fopen ("result.txt", "a"); //to-do: check open == null
                             fwrite(sc[i].buffer, sizeof(char), size, fp);
                             fwrite("\n\n", sizeof(char), 2, fp);
                             fclose(fp);
-                            fix_internal_buffer(i, sc, offset_ptr);
+                            reset_container(sc, i);
                             if(queue.queue_pos < queue.queue_size)
                             {
                                 queue_next_file(fdw);
@@ -84,9 +84,10 @@ int main(
                     else if(bytes_read < CHUNK_SIZE)
                     {
                         FILE *fp = fopen ("result.txt", "a");                       
-                        int size = sc[i].pos + bytes_read - 1;
+                        int size = sc[i].pos + bytes_read;
                         fwrite(sc[i].buffer, sizeof(char), size, fp);
                         fwrite("\n\n", sizeof(char), 2, fp);
+                        
                         fclose(fp);
                         reset_container(sc, i);
                         if(queue.queue_pos < queue.queue_size)
@@ -116,21 +117,6 @@ int main(
         waitpid(slave_pid[i], &fr, 0);
     }
 
-}
-
-
-void fix_internal_buffer(
-    int idx, 
-    slave_container * sc, 
-    char * delim_offset)
-{
-    char * chunk_pos = sc[idx].buffer + sc[idx].pos;
-    int new_file_pos = CHUNK_SIZE -  (delim_offset - chunk_pos) ;
-    char tmp[new_file_pos];
-    memcpy(tmp, chunk_pos + CHUNK_SIZE - new_file_pos, new_file_pos);
-    reset_container(sc, idx);
-    memcpy(sc[idx].buffer, tmp, new_file_pos);
-    sc[idx].pos = new_file_pos;
 }
 
 
