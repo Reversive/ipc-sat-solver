@@ -1,8 +1,9 @@
 master
-    - [ ] break-loop conditions (for(;;))
-    - [ ] queue files to non-working slaves
+    - [X] break-loop conditions (select() while loop)
+    - [X] queue files to non-working slaves
     - [ ] add view support (shared mem)
-    - [ ] remove waitpid(), master should end slaves by closing its pipe
+    - [X] write all slave outputs to a file
+
 
 slave
     - [ ] sat solving

@@ -1,9 +1,8 @@
 #ifndef SLAVE_H
 #define SLAVE_H
-#include <stdio.h>
-#include <unistd.h>
+#define  _GNU_SOURCE
 #include <string.h>
-#include <stdlib.h>
+#include <errno.h>
 #include "../../communication/include/pipe.h"
 #define STDIN 0
 #define STDOUT 1

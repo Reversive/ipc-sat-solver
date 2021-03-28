@@ -1,11 +1,9 @@
 #include "include/slave.h"
 
-
 int main(
     int argc, 
     char **argv) 
 {
-    
     char *path = NULL;
     size_t len = 0;
     ssize_t read;
@@ -13,13 +11,15 @@ int main(
     while ((read = getline(&path, &len, stdin)) != EOF) {
 
         FILE *fp;
-        fp = fopen(path,"r");
+        fp = fopen(path, "r");
         if(fp == NULL)
         {
-            perror("Unexpected problem opening file");
+            perror(path);
             exit(EXIT_FAILURE);
         }
+
         size_t last_pos = fread(payload, sizeof(char), MAX_FILE_SIZE, fp);
+
         if(ferror( fp ) != 0 )
         {
             perror("Unexpected problem reading file");
@@ -27,11 +27,16 @@ int main(
         }
         else
         {
-            payload[last_pos++] = '\0';
+            payload[last_pos++] = '|';
         }
         fclose(fp);
-        printf("[CHILD %d] Retrieved path of length %zu : %s\n", getpid(), read, path);
-        fflush(stdout);
+        write_fd(STDOUT, payload, last_pos);
+    }
+
+    if(errno == SYS_FAILURE)
+    {
+        perror("Problem with getline()");
+        exit(EXIT_FAILURE);
     }
     free(path);
     return 0;

@@ -2,8 +2,10 @@
 solve
 slave
 master
+.bash_history
 
-
+samples/*
+samples
 # Prerequisites
 *.d
 

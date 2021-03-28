@@ -14,12 +14,12 @@
 #define IN 0
 
 void open_pipe(int *m_pipe);
-void open_pipe_array(int *pipe_array, int size);
+void open_pipe_array(int *m_pipe, int size);
 void write_fd(int fd, char *message, int size);
-void write_pipe(int * fda, int idx, char * payload, int size);
+void write_pipe(int *m_pipe, int idx, char *payload, int size);
 void close_fd(int fd);
-void close_pipe(int * fd, int side, int size);
-void redirect_pipe(int *fda, int slave_id, int from, int to, int size);
-int set_fd_array(int * fda, fd_set * fds, int slave_count);
+void close_pipe(int *m_pipe, int side, int size);
+void redirect_pipe(int *m_pipe, int slave_id, int from, int to, int size);
+int set_fd_array(int *fd_array, fd_set *fdr, int slave_count);
 
 #endif

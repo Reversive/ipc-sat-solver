@@ -11,12 +11,12 @@ void open_pipe(int *m_pipe)
 }
 
 void open_pipe_array(
-    int *pipe_array, 
+    int *m_pipe, 
     int size)
 {
     for(int i = 0; i < size; i++)
     {
-        open_pipe(&pipe_array[ PIPE_SIZE * i]);
+        open_pipe(&m_pipe[ PIPE_SIZE * i]);
     }
 }
 
@@ -33,12 +33,12 @@ void write_fd(
 }
 
 void write_pipe(
-    int * fda, 
+    int * m_pipe, 
     int idx, 
     char * payload,
     int size)
 {
-    write_fd(fda[PIPE_SIZE * idx + OUT], payload, size);
+    write_fd(m_pipe[PIPE_SIZE * idx + OUT], payload, size);
 }
 
 void close_fd(int fd)
@@ -52,7 +52,7 @@ void close_fd(int fd)
 }
 
 void close_pipe(
-    int * fd,
+    int *m_pipe,
     int side,
     int size)
 {
@@ -62,10 +62,10 @@ void close_pipe(
         switch (side)
         {
         case IN:
-            close_fd(fd[PIPE_SIZE * i + IN]);
+            close_fd(m_pipe[PIPE_SIZE * i + IN]);
             break;
         case OUT:
-            close_fd(fd[PIPE_SIZE * i + OUT]);
+            close_fd(m_pipe[PIPE_SIZE * i + OUT]);
             break;
         
         default:
@@ -78,7 +78,7 @@ void close_pipe(
 
 
 void redirect_pipe(
-    int *fda,
+    int *m_pipe,
     int slave_id,
     int from, 
     int to,
@@ -89,38 +89,32 @@ void redirect_pipe(
         perror("bad pipe_redirect args");
         exit(PIPE_REDIRECT_FAILURE);
     }
-
-    for(int i = 0; i < size; i++)
+    if( dup2(m_pipe[PIPE_SIZE * slave_id + from], to) == SYS_FAILURE )
     {
-        if(i == slave_id)
-        {
-            if( dup2(fda[PIPE_SIZE * i + from], to) == SYS_FAILURE )
-            {
-                perror("dup2()");
-                exit(PIPE_REDIRECT_FAILURE);
-            }
-        }
+        perror("dup2()");
+        exit(PIPE_REDIRECT_FAILURE);
     }
+    
 }
 
 
 
 int set_fd_array(
-    int * fda, 
-    fd_set * fds,
+    int *fdr_array,  
+    fd_set *fdr,
     int slave_count)
 {
-    int i;
     int highest = 0;
-    for(i = 0; i < slave_count; i++)
+    for(int i = 0; i < slave_count; i++)
     {
-        int current_fd = i * PIPE_SIZE;
-        if(fda[current_fd] > highest)
+        int current_rfd = i * PIPE_SIZE;
+        if(fdr_array[current_rfd] > highest)
         {
-            highest = fda[current_fd];
+            highest = fdr_array[current_rfd];
         }
-        FD_SET(fda[current_fd], fds);
+
+        FD_SET(fdr_array[current_rfd], fdr);
     }
-    return highest;
+    return highest + 1;
 }
 

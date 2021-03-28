@@ -3,9 +3,9 @@
 int master_fd[PIPE_ARRAY_SIZE];
 int slave_fd[PIPE_ARRAY_SIZE];
 int slave_pid[MAX_SLAVE_COUNT];
-char *file_buffer[PATH_BUFFER_LIMIT];
-int queue_pos = QUEUE_START;
-int queue_size = QUEUE_EMPTY;
+const int DELIM = '|';
+
+file_container queue = {{0}, 0, 0, 0};
 
 int main(
     int argc, 
@@ -19,15 +19,124 @@ int main(
     open_pipe_array(slave_fd, slave_count);
     distribute_files(master_fd, file_names, file_count, slave_count);
     summon_slaves(slave_count);
-    sleep(2); // time for view to spawn
+    //sleep(VIEW_SLEEP_INTERVAL); // time for view to spawn
+    slave_container sc[slave_count];
+    init_container_array(sc, slave_count);
+    int status = RUNNING;
+
+    while(status == RUNNING)
+    {
+        fd_set rfds;
+        struct timeval tv;
+        tv.tv_sec = 0;
+        tv.tv_usec = 0;
+        FD_ZERO(&rfds);
+        int fdmax = set_fd_array(slave_fd, &rfds, slave_count);
+        int retval = select(fdmax, &rfds, NULL, NULL, &tv);
+        switch (retval)
+        {
+        case SYS_FAILURE:
+            perror("select()");
+            exit(SELECT_FAILURE);
+
+        case TIMEOUT:
+            if(queue.queue_read == queue.queue_size)
+            {
+                status = STOP;
+            }
+            break;
+        
+        default:
+            for(int i = 0; i < slave_count; i++)
+            {
+                int fdr = slave_fd[i * PIPE_SIZE];
+                int fdw = master_fd[i * PIPE_SIZE + OUT];
+                if(FD_ISSET(fdr, &rfds))
+                {
+                    int bytes_read = read(fdr, sc[i].buffer + sc[i].pos , CHUNK_SIZE);
+                    if(bytes_read == SYS_FAILURE)
+                    {
+                        perror("read()");
+                        exit(EXIT_FAILURE);
+                    }
+                    else if(bytes_read == CHUNK_SIZE)
+                    {
+                        char *offset_ptr = strchr(sc[i].buffer + sc[i].pos, DELIM);
+                        if( offset_ptr != NULL)
+                        {
+                            int size = offset_ptr - sc[i].buffer;
+                            FILE *fp = fopen ("result.txt", "a"); //to-do: check open == null
+                            fwrite(sc[i].buffer, sizeof(char), size, fp);
+                            fwrite("\n\n", sizeof(char), 2, fp);
+                            fclose(fp);
+                            fix_internal_buffer(i, sc, offset_ptr);
+                            if(queue.queue_pos < queue.queue_size)
+                            {
+                                queue_next_file(fdw);
+                            }
+
+                        }
+                        else
+                        {
+                            sc[i].pos += CHUNK_SIZE;
+                        }
+                    }
+                    else if(bytes_read < CHUNK_SIZE)
+                    {
+                        FILE *fp = fopen ("result.txt", "a");                       
+                        int size = sc[i].pos + bytes_read - 1;
+                        fwrite(sc[i].buffer, sizeof(char), size, fp);
+                        fwrite("\n\n", sizeof(char), 2, fp);
+                        fclose(fp);
+                        reset_container(sc, i);
+                        if(queue.queue_pos < queue.queue_size)
+                        {
+                            queue_next_file(fdw);
+                        }
+                    }
+                }
+                
+            }
+            break;
+        }
+       
+    }
 
     close_pipe(master_fd, OUT, slave_count); // send signal to slaves to exit
+    close_pipe(master_fd, IN, slave_count);
+    close_pipe(slave_fd, OUT, slave_count);
+    close_pipe(slave_fd, IN, slave_count);
+
     for(int i = 0; i < slave_count; i++)
     {
         int fr;
         waitpid(slave_pid[i], &fr, 0);
     }
 
+}
+
+
+void fix_internal_buffer(
+    int idx, 
+    slave_container * sc, 
+    char * delim_offset)
+{
+    char * chunk_pos = sc[idx].buffer + sc[idx].pos;
+    int new_file_pos = CHUNK_SIZE -  (delim_offset - chunk_pos) ;
+    char tmp[new_file_pos];
+    memcpy(tmp, chunk_pos + CHUNK_SIZE - new_file_pos, new_file_pos);
+    reset_container(sc, idx);
+    memcpy(sc[idx].buffer, tmp, new_file_pos);
+    sc[idx].pos = new_file_pos;
+}
+
+
+void queue_next_file(int fd)
+{
+    int sz = strlen(queue.file_buffer[queue.queue_pos]) + NULL_TERMINATOR;
+    write_fd(fd, queue.file_buffer[queue.queue_pos++], sz);
+    write_fd(fd, "\n", BYTE);
+    queue.queue_read++;
 }
 
 void distribute_files(
@@ -42,13 +151,9 @@ void distribute_files(
         write_pipe(fda, i % slave_count, file_list[i], strlen(file_list[i]) + NULL_TERMINATOR);
         write_pipe(fda, i % slave_count, "\n", BYTE);
     }
-
-    if(i == STARTING_FILE_LIMIT)
+    for(int j = i; j < file_count; j++)
     {
-        for(int j = i; j < file_count; j++)
-        {
-            file_buffer[queue_size++] = file_list[j];
-        }
+        queue.file_buffer[queue.queue_size++] = file_list[j];
     }
 }
 
@@ -73,9 +178,9 @@ void summon_slaves(
             redirect_pipe(master_fd, i, IN, STDIN, slave_count);
             close_pipe(master_fd, IN, slave_count);
             close_pipe(master_fd, OUT, slave_count);
-            //redirect_pipe(slave_fd, i, OUT, STDOUT, slave_count);
-            //close_pipe(slave_fd, IN, slave_count);
-            //close_pipe(slave_fd, OUT, slave_count);  
+            redirect_pipe(slave_fd, i, OUT, STDOUT, slave_count);
+            close_pipe(slave_fd, IN, slave_count);
+            close_pipe(slave_fd, OUT, slave_count);  
             execv("./process/bin/slave", argv);
             perror("execv()");
             exit(EXECV_FAILURE);
