@@ -8,9 +8,8 @@
 #include <signal.h>
 #include <sys/socket.h>
 
-#define TIMEOUT 0
 #define DELIMITER 1
-#define ZERO 0
+#define NONE 0
 
 #define STDIN 0
 #define STDOUT 1
@@ -26,11 +25,14 @@
 #define VIEW_SLEEP_INTERVAL 2
 
 
-void distribute_files(int * fda, char ** file_list, int file_count, int slave_count);
+void distribute_and_cache_paths(int * pipes, char ** path_list, int path_count, int slave_count);
 void summon_slaves(int slave_count);
 void kill_previous_slaves(int last_slave);
-int check_fd_array_set(int * fda, fd_set * fds, int slave_count);
-void queue_next_file(int fd);
+int check_fd_array_set(int * pipes, fd_set * fds, int slave_count);
+void queue_next_path(int fd);
+void poll_queue_next_path(int * is_pipe_closed, int write_fd, int slave_count);
 void fix_internal_buffer(int idx, slave_container * sc, char * delim_offset);
-
+void set_slaves_status(int * slave_status, int slave_count, enum STATUS status);
+int get_running_slaves_count(int * slave_status, int slave_count);
+void write_buffer_to_file(char * path, char * flag, int size, slave_container * sc, int current_slave);
 #endif

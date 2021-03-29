@@ -98,7 +98,7 @@ void redirect_pipe(
 
 
 
-int set_fd_array(
+int set_pipe_array(
     int *fdr_array,  
     fd_set *fdr,
     int slave_count)

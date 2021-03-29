@@ -3,7 +3,8 @@ master
     - [X] queue files to non-working slaves
     - [ ] add view support (shared mem)
     - [X] write all slave outputs to a file
-    - [ ] FIX MASTER WHEN HAVING MORE THAN 1 SLAVE RUNNING
+    - [X] FIX MASTER WHEN HAVING MORE THAN 1 SLAVE RUNNING
+    - [X] Add fopen check
 
 
 slave

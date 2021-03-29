@@ -7,14 +7,15 @@ int main(
     char *path = NULL;
     size_t len = 0;
     ssize_t read;
-    char payload[MAX_FILE_SIZE + NULL_TERMINATOR];
+    errno = 0;
     while ((read = getline(&path, &len, stdin)) != EOF) 
     {
+        char payload[MAX_FILE_SIZE + NULL_TERMINATOR];
         FILE *fp;
         fp = fopen(path, "r");
         if(fp == NULL)
         {
-            perror(path);
+            perror("Failed opening a file");
             exit(EXIT_FAILURE);
         }
 
@@ -40,6 +41,7 @@ int main(
         exit(EXIT_FAILURE);
     }
 
+   
     close_fd(STDOUT);
     free(path);
     return 0;
