@@ -43,7 +43,6 @@ void write_pipe(
 
 void close_fd(int fd)
 {
-    fflush(stdout);
     if( close(fd) == SYS_FAILURE )
     {
         perror("close() close_fd");

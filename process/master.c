@@ -51,19 +51,20 @@ int main(
                     }
                     else if(bytes_read == ZERO)
                     {
-                        printf("Reached here\n");
                         status = STOP;
                     }
-                    else if(bytes_read <= CHUNK_SIZE)
+                    else if(bytes_read == CHUNK_SIZE)
                     {
-                        char *offset_ptr = strchr(sc[i].buffer + sc[i].pos, DELIM);
+                        
+                        char *offset_ptr = strchr(sc[i].buffer, DELIM);
                         if( offset_ptr != NULL)
                         {
-                            int size = offset_ptr - sc[i].buffer ;
+                            int size = offset_ptr - sc[i].buffer - 1;
                             FILE *fp = fopen ("result.txt", "a"); //to-do: check open == null
                             fwrite(sc[i].buffer, sizeof(char), size, fp);
                             fwrite("\n\n", sizeof(char), 2, fp);
                             fclose(fp);
+                            
                             fix_internal_buffer(i, sc, offset_ptr);
                             if(queue.queue_pos < queue.queue_size)
                             {
@@ -74,7 +75,6 @@ int main(
                                 flag = 1;
                                 close_pipe(master_fd, OUT, slave_count);
                             }
-
                         }
                         else
                         {
@@ -84,7 +84,7 @@ int main(
                     else if(bytes_read < CHUNK_SIZE)
                     {
                         FILE *fp = fopen ("result.txt", "a");                       
-                        int size = sc[i].pos + bytes_read;
+                        int size = sc[i].pos + bytes_read - 1;
                         fwrite(sc[i].buffer, sizeof(char), size, fp);
                         fwrite("\n\n", sizeof(char), 2, fp);
                         
@@ -108,8 +108,8 @@ int main(
        
     }
 
-    close_pipe(master_fd, IN, slave_count);
     close_pipe(slave_fd, IN, slave_count);
+    
 
     for(int i = 0; i < slave_count; i++)
     {
@@ -127,17 +127,18 @@ void fix_internal_buffer(
 {
     char * chunk_pos = sc[idx].buffer + sc[idx].pos;
     int new_file_pos = CHUNK_SIZE -  (delim_offset - chunk_pos) ;
-    char tmp[new_file_pos];
-    memcpy(tmp, chunk_pos + CHUNK_SIZE - new_file_pos, new_file_pos);
+    char tmp[new_file_pos - 1];
+    memcpy(tmp, chunk_pos + CHUNK_SIZE - new_file_pos + 1, new_file_pos - 1);
     reset_container(sc, idx);
-    memcpy(sc[idx].buffer, tmp, new_file_pos);
-    sc[idx].pos = new_file_pos;
+    memcpy(sc[idx].buffer, tmp, new_file_pos - 1);
+    sc[idx].pos = new_file_pos - 1;
 }
 
 
 void queue_next_file(int fd)
 {
-    int sz = strlen(queue.file_buffer[queue.queue_pos]) + NULL_TERMINATOR;
+    int sz = strlen(queue.file_buffer[queue.queue_pos]) + NULL_TERMINATOR * 2 ;
+
     write_fd(fd, queue.file_buffer[queue.queue_pos++], sz);
     write_fd(fd, "\n", BYTE);
     queue.queue_read++;
@@ -192,6 +193,8 @@ void summon_slaves(
 
         slave_pid[i] = pid;
     }
+    close_pipe(master_fd, IN, slave_count);
+    close_pipe(slave_fd, OUT, slave_count);
 }
 
 

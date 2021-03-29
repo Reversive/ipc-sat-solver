@@ -8,8 +8,8 @@ int main(
     size_t len = 0;
     ssize_t read;
     char payload[MAX_FILE_SIZE + NULL_TERMINATOR];
-    while ((read = getline(&path, &len, stdin)) != EOF) {
-
+    while ((read = getline(&path, &len, stdin)) != EOF) 
+    {
         FILE *fp;
         fp = fopen(path, "r");
         if(fp == NULL)
@@ -29,6 +29,7 @@ int main(
         {
             payload[last_pos++] = '|';
         }
+
         fclose(fp);
         write_fd(STDOUT, payload, last_pos);
     }
@@ -38,10 +39,8 @@ int main(
         perror("Problem with getline()");
         exit(EXIT_FAILURE);
     }
-    char bf[20];
-    sprintf(bf, "Sali\n");
-    write(2, bf, strlen(bf) + 1);
-    close_fd(1);
+
+    close_fd(STDOUT);
     free(path);
     return 0;
 }
