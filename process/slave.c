@@ -10,29 +10,37 @@ int main(
     errno = 0;
     while ((read = getline(&path, &len, stdin)) != EOF) 
     {
-        char payload[MAX_FILE_SIZE + NULL_TERMINATOR];
-        FILE *fp;
-        fp = fopen(path, "r");
-        if(fp == NULL)
-        {
-            perror("Failed opening a file");
+        char command_args[1024];
+        strcat(command_args,"minisat ");
+        strcat(command_args,path);
+        strcat(command_args," | grep -o -e 'Number of.*[0-9]\\+' -e 'CPU time.*' -e '.*SATISFIABLE'");
+
+        FILE * fp = popen(command_args, "r");
+        if (fp == NULL) {
+            perror("Failed popen");
             exit(EXIT_FAILURE);
         }
+        
+        char payload[MAX_FILE_SIZE + NULL_TERMINATOR];
+
+        rewind(fp);
 
         size_t last_pos = fread(payload, sizeof(char), MAX_FILE_SIZE, fp);
 
-        if(ferror( fp ) != 0 )
-        {
+        if(ferror( fp ) != 0 ) {
             perror("Unexpected problem reading file");
             exit(EXIT_FAILURE);
-        }
-        else
+        }else
         {
-            payload[last_pos++] = '|';
+            payload[last_pos] = '*';
         }
 
-        fclose(fp);
+        pclose(fp);
+        char tmp[20];
+        sprintf(tmp,"%d\n",last_pos);
+        write_fd(2, tmp, strlen(tmp)+1);
         write_fd(STDOUT, payload, last_pos);
+
     }
 
     if(errno == SYS_FAILURE)

@@ -3,7 +3,7 @@
 int master_fd[PIPE_ARRAY_SIZE];
 int slave_fd[PIPE_ARRAY_SIZE];
 int slave_pid[MAX_SLAVE_COUNT];
-const int DELIM = '|';
+const int DELIM = '*';
 
 file_container queue = {{0}, 0, 0, 0};
 

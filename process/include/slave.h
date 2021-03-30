@@ -6,5 +6,5 @@
 #include "../../communication/include/pipe.h"
 #define STDIN 0
 #define STDOUT 1
-#define MAX_FILE_SIZE 16384
+#define MAX_FILE_SIZE 16384*2
 #endif

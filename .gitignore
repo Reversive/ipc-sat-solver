@@ -2,6 +2,7 @@
 solve
 slave
 master
+view
 .bash_history
 result.txt
 # Prerequisites
