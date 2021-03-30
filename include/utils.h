@@ -33,5 +33,5 @@ int is_valid_file(const char *path);
 int is_valid_batch(char **paths, int len);
 void init_container_array(slave_container * container, int size);
 void reset_container(slave_container * container, int idx);
-
+void remove_char(char *s, char chr);
 #endif

@@ -1,7 +1,7 @@
 #include "include/master.h"
 
-int master_fd[PIPE_ARRAY_SIZE];
-int slave_fd[PIPE_ARRAY_SIZE];
+int master_to_slave_pipe_array[PIPE_ARRAY_SIZE];
+int slave_to_master_pipe_array[PIPE_ARRAY_SIZE];
 int slave_pid[MAX_SLAVE_COUNT];
 const int DELIM = '*';
 
@@ -16,14 +16,14 @@ int main(
     int path_count = argc;
     char **paths = argv;
     int slave_count = path_count >= MAX_SLAVE_COUNT ? MAX_SLAVE_COUNT : path_count;
-    //int shm_size = path_count * MAX_BUFFER_SIZE;
-    //int shm_object = open_shared_mem_object(NAME, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR);
-    //extend_shared_mem(shm_object, shm_size);
-    //void *shm_data = map_shared_memory(NULL, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_object, 0);
-    //unlink_shared_memory(NAME);
-    open_pipe_array(master_fd, slave_count);
-    open_pipe_array(slave_fd, slave_count);
-    distribute_and_cache_paths(master_fd, paths, path_count, slave_count);
+    /*int shm_size = path_count * MAX_BUFFER_SIZE;
+    int shm_object = open_shared_mem_object(NAME, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR);
+    extend_shared_mem(shm_object, shm_size);
+    void *shm_data = map_shared_memory(NULL, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_object, 0);
+    unlink_shared_memory(NAME);*/
+    open_pipe_array(master_to_slave_pipe_array, slave_count);
+    open_pipe_array(slave_to_master_pipe_array, slave_count);
+    distribute_and_cache_paths(master_to_slave_pipe_array, paths, path_count, slave_count);
     summon_slaves(slave_count);
     slave_container sc[slave_count];
     init_container_array(sc, slave_count);
@@ -34,10 +34,10 @@ int main(
 
     while(slaves_running > 0)
     {
-        fd_set rfds;
-        FD_ZERO(&rfds);
-        int fdmax = set_pipe_array(slave_fd, &rfds, slave_count);
-        int retval = select(fdmax, &rfds, NULL, NULL, NULL);
+        fd_set read_fds;
+        FD_ZERO(&read_fds);
+        int fdmax = set_pipe_array(slave_to_master_pipe_array, &read_fds, slave_count);
+        int retval = select(fdmax, &read_fds, NULL, NULL, NULL);
         if(retval == SYS_FAILURE)
         {
             perror("select()");
@@ -47,9 +47,9 @@ int main(
         {
             for(int current_slave = 0; current_slave < slave_count; current_slave++)
             {
-                int read_fd = slave_fd[current_slave * PIPE_SIZE];
-                int write_fd = master_fd[current_slave * PIPE_SIZE + OUT];
-                if(FD_ISSET(read_fd, &rfds))
+                int read_fd = slave_to_master_pipe_array[current_slave * PIPE_SIZE + READ];
+                int write_fd = master_to_slave_pipe_array[current_slave * PIPE_SIZE + WRITE];
+                if(FD_ISSET(read_fd, &read_fds))
                 {
                     int bytes_read = read(read_fd, sc[current_slave].buffer + sc[current_slave].pos , CHUNK_SIZE);
                     if(bytes_read == SYS_FAILURE)
@@ -63,12 +63,12 @@ int main(
                     }
                     else if(bytes_read == CHUNK_SIZE)
                     {
-                        char *delim_pos = strchr(sc[current_slave].buffer, DELIM);
-                        if(delim_pos)
+                        char *delimiter_offset = strchr(sc[current_slave].buffer, DELIM);
+                        if(delimiter_offset != NULL)
                         {
-                            int size = delim_pos - sc[current_slave].buffer - DELIMITER;
+                            int size = delimiter_offset - sc[current_slave].buffer - DELIMITER;
                             write_buffer_to_file("result.txt", "a", size, sc, current_slave);                          
-                            fix_internal_buffer(current_slave, sc, delim_pos);
+                            fix_internal_buffer(current_slave, sc, delimiter_offset);
                             poll_queue_next_path(&is_pipe_closed, write_fd, slave_count);
                         }
                         else
@@ -91,7 +91,7 @@ int main(
        
     }
 
-    close_pipe(slave_fd, IN, slave_count);
+    close_pipe_array(slave_to_master_pipe_array, READ, slave_count);
     for(int current_slave = 0; current_slave < slave_count; current_slave++)
     {
         int fr;
@@ -108,22 +108,26 @@ void poll_queue_next_path(
 {
     if(queue.queue_pos < queue.queue_size)
     {
-        queue_next_path(write_fd);
+        queue_next_path(write_fd, queue.file_buffer, queue.queue_pos);
+        queue.queue_pos++;
     }
     else if(!*is_pipe_closed)
     {
         *is_pipe_closed = !*is_pipe_closed;
-        close_pipe(master_fd, OUT, slave_count);
+        close_pipe_array(master_to_slave_pipe_array, WRITE, slave_count);
     }
 }
 
 void queue_next_path(
-    int fd)
+    int fd,
+    char **path_list,
+    int current_file)
 {
-    int sz = strlen(queue.file_buffer[queue.queue_pos]) + NULL_TERMINATOR;
-    write_fd(fd, queue.file_buffer[queue.queue_pos++], sz);
-    write_fd(fd, "\n", BYTE);
-    queue.queue_read++;
+    int sz = strlen(path_list[current_file]) + NULL_TERMINATOR;
+    char holder[sz + DELIMITER];
+    memcpy(holder, path_list[current_file], sz);
+    strcat(holder, "\n");
+    write_fd(fd, holder, sz);    
 }
 
 void write_buffer_to_file(
@@ -140,7 +144,7 @@ void write_buffer_to_file(
         exit(EXIT_FAILURE);
     }
     fwrite(sc[current_slave].buffer, sizeof(char), size, fp);
-    fwrite("\n\n", sizeof(char), 2, fp);
+    fwrite("\n", sizeof(char), BYTE, fp);
     if( ferror( fp ) != 0 )
     {
         perror("Unexpected problem writing file");
@@ -173,8 +177,8 @@ void distribute_and_cache_paths(
     int current_path;
     for(current_path = 0; current_path < path_count && current_path != STARTING_FILE_LIMIT; current_path++)
     {
-        write_pipe(pipe, current_path % slave_count, path_list[current_path], strlen(path_list[current_path]) + NULL_TERMINATOR);
-        write_pipe(pipe, current_path % slave_count, "\n", BYTE);
+        int fd = pipe[PIPE_SIZE * (current_path % slave_count) + WRITE];
+        queue_next_path(fd, path_list, current_path);
     }
 
     for(int j = current_path; j < path_count; j++)
@@ -201,12 +205,12 @@ void summon_slaves(
 
         if(pid == 0)
         {
-            redirect_pipe(master_fd, current_slave, IN, STDIN, slave_count);
-            close_pipe(master_fd, IN, slave_count);
-            close_pipe(master_fd, OUT, slave_count);
-            redirect_pipe(slave_fd, current_slave, OUT, STDOUT, slave_count);
-            close_pipe(slave_fd, IN, slave_count);
-            close_pipe(slave_fd, OUT, slave_count);  
+            redirect_pipe(master_to_slave_pipe_array, current_slave, READ, STDIN, slave_count);
+            close_pipe_array(master_to_slave_pipe_array, READ, slave_count);
+            close_pipe_array(master_to_slave_pipe_array, WRITE, slave_count);
+            redirect_pipe(slave_to_master_pipe_array, current_slave, WRITE, STDOUT, slave_count);
+            close_pipe_array(slave_to_master_pipe_array, READ, slave_count);
+            close_pipe_array(slave_to_master_pipe_array, WRITE, slave_count);  
             execv("./process/bin/slave", argv);
             perror("execv()");
             exit(EXECV_FAILURE);
@@ -214,8 +218,8 @@ void summon_slaves(
 
         slave_pid[current_slave] = pid;
     }
-    close_pipe(master_fd, IN, slave_count);
-    close_pipe(slave_fd, OUT, slave_count);
+    close_pipe_array(master_to_slave_pipe_array, READ, slave_count);
+    close_pipe_array(slave_to_master_pipe_array, WRITE, slave_count);
 }
 
 

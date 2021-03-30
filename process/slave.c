@@ -10,11 +10,12 @@ int main(
     errno = 0;
     while ((read = getline(&path, &len, stdin)) != EOF) 
     {
-        char command_args[1024];
+        remove_char(path, '\n');
+        char command_args[MAX_PATH_SIZE] = {0};
         strcat(command_args,"minisat ");
-        strcat(command_args,path);
-        strcat(command_args," | grep -o -e 'Number of.*[0-9]\\+' -e 'CPU time.*' -e '.*SATISFIABLE'");
-
+        strcat(command_args, path);
+        strcat(command_args," | grep -o -e 'Number of.*[0-9]\\+' -e 'CPU time.*' -e '.*SATISFIABLE' | grep -o -e '[0-9|.]*' -o -e '.*SATISFIABLE' | xargs | sed 's/ /\\t/g'");
+        
         FILE * fp = popen(command_args, "r");
         if (fp == NULL) {
             perror("Failed popen");
@@ -30,17 +31,14 @@ int main(
         if(ferror( fp ) != 0 ) {
             perror("Unexpected problem reading file");
             exit(EXIT_FAILURE);
-        }else
+        }
+        else
         {
             payload[last_pos] = '*';
         }
 
         pclose(fp);
-        char tmp[20];
-        sprintf(tmp,"%d\n",last_pos);
-        write_fd(2, tmp, strlen(tmp)+1);
         write_fd(STDOUT, payload, last_pos);
-
     }
 
     if(errno == SYS_FAILURE)
@@ -48,10 +46,11 @@ int main(
         perror("Problem with getline()");
         exit(EXIT_FAILURE);
     }
-
    
     close_fd(STDOUT);
     free(path);
     return 0;
 }
+
+
 

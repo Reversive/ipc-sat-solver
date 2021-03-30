@@ -29,7 +29,7 @@ void distribute_and_cache_paths(int * pipes, char ** path_list, int path_count, 
 void summon_slaves(int slave_count);
 void kill_previous_slaves(int last_slave);
 int check_fd_array_set(int * pipes, fd_set * fds, int slave_count);
-void queue_next_path(int fd);
+void queue_next_path(int fd, char **path_list, int current_path);
 void poll_queue_next_path(int * is_pipe_closed, int write_fd, int slave_count);
 void fix_internal_buffer(int idx, slave_container * sc, char * delim_offset);
 void set_slaves_status(int * slave_status, int slave_count, enum STATUS status);

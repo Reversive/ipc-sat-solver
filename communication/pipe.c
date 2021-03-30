@@ -39,7 +39,7 @@ void write_pipe(
     char * payload,
     int size)
 {
-    write_fd(m_pipe[PIPE_SIZE * idx + OUT], payload, size);
+    write_fd(m_pipe[PIPE_SIZE * idx + WRITE], payload, size);
 }
 
 void close_fd(int fd)
@@ -51,7 +51,7 @@ void close_fd(int fd)
     }
 }
 
-void close_pipe(
+void close_pipe_array(
     int *m_pipe,
     int side,
     int size)
@@ -61,11 +61,11 @@ void close_pipe(
     {
         switch (side)
         {
-        case IN:
-            close_fd(m_pipe[PIPE_SIZE * current_pipe + IN]);
+        case READ:
+            close_fd(m_pipe[PIPE_SIZE * current_pipe + READ]);
             break;
-        case OUT:
-            close_fd(m_pipe[PIPE_SIZE * current_pipe + OUT]);
+        case WRITE:
+            close_fd(m_pipe[PIPE_SIZE * current_pipe + WRITE]);
             break;
         
         default:
@@ -84,7 +84,7 @@ void redirect_pipe(
     int to,
     int size)
 {
-    if(from != OUT && from != IN)
+    if(from != WRITE && from != READ)
     {
         perror("bad pipe_redirect args");
         exit(PIPE_REDIRECT_FAILURE);

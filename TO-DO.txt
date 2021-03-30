@@ -8,5 +8,5 @@ master
 
 
 slave
-    - [ ] sat solving
+    - [X] sat solving
 

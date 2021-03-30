@@ -49,3 +49,19 @@ void reset_container(
         container[idx].buffer[i] = 0;
     }
 }
+
+
+void remove_char(
+    char *s, 
+    char chr)
+{
+   int i, j = 0;
+   for ( i = 0; s[i] != '\0'; i++ )
+   {
+      if ( s[i] != chr )
+      {
+         s[j++] = s[i]; 
+      }
+   }
+   s[j] = '\0';
+}

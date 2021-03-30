@@ -12,13 +12,13 @@ all: $(SOLVE_OUT) $(PROCESS_OUT)
 $(SOLVE_OUT): $(OBJECTS)
 
 $(PROCESS_OUT):
-	cd process; make all	
+	cd process; make all;
 
 %.o: %.c
 	$(CC) $(CFLAGS) -I./include -c $< -o $@
 
 clean:
-	rm -rf *.o solve
+	rm -rf *.o solve  view
 	cd process; make clean
 	cd communication; rm -rf *.o
 
