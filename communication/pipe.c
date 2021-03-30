@@ -14,9 +14,10 @@ void open_pipe_array(
     int *m_pipe, 
     int size)
 {
-    for(int i = 0; i < size; i++)
+    int current_pipe;
+    for(current_pipe = 0; current_pipe < size; current_pipe++)
     {
-        open_pipe(&m_pipe[ PIPE_SIZE * i]);
+        open_pipe(&m_pipe[ PIPE_SIZE * current_pipe]);
     }
 }
 
@@ -55,16 +56,16 @@ void close_pipe(
     int side,
     int size)
 {
-
-    for(int i = 0; i < size; i++)
+    int current_pipe;
+    for(current_pipe = 0; current_pipe < size; current_pipe++)
     {
         switch (side)
         {
         case IN:
-            close_fd(m_pipe[PIPE_SIZE * i + IN]);
+            close_fd(m_pipe[PIPE_SIZE * current_pipe + IN]);
             break;
         case OUT:
-            close_fd(m_pipe[PIPE_SIZE * i + OUT]);
+            close_fd(m_pipe[PIPE_SIZE * current_pipe + OUT]);
             break;
         
         default:
@@ -104,9 +105,10 @@ int set_pipe_array(
     int slave_count)
 {
     int highest = 0;
-    for(int i = 0; i < slave_count; i++)
+    int current_pipe;
+    for(current_pipe = 0; current_pipe < slave_count; current_pipe++)
     {
-        int current_rfd = i * PIPE_SIZE;
+        int current_rfd = current_pipe * PIPE_SIZE;
         if(fdr_array[current_rfd] > highest)
         {
             highest = fdr_array[current_rfd];

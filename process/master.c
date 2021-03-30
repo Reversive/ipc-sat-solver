@@ -11,15 +11,20 @@ int main(
     int argc, 
     char **argv) 
 {
+    sleep(VIEW_SLEEP_INTERVAL);
     setbuf(stdout, NULL);
     int path_count = argc;
     char **paths = argv;
     int slave_count = path_count >= MAX_SLAVE_COUNT ? MAX_SLAVE_COUNT : path_count;
+    //int shm_size = path_count * MAX_BUFFER_SIZE;
+    //int shm_object = open_shared_mem_object(NAME, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR);
+    //extend_shared_mem(shm_object, shm_size);
+    //void *shm_data = map_shared_memory(NULL, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_object, 0);
+    //unlink_shared_memory(NAME);
     open_pipe_array(master_fd, slave_count);
     open_pipe_array(slave_fd, slave_count);
     distribute_and_cache_paths(master_fd, paths, path_count, slave_count);
     summon_slaves(slave_count);
-    //sleep(VIEW_SLEEP_INTERVAL); // time for view to spawn
     slave_container sc[slave_count];
     init_container_array(sc, slave_count);
     int slaves_status[slave_count];
@@ -87,8 +92,6 @@ int main(
     }
 
     close_pipe(slave_fd, IN, slave_count);
-
-
     for(int current_slave = 0; current_slave < slave_count; current_slave++)
     {
         int fr;

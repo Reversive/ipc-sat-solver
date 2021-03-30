@@ -1,8 +1,8 @@
 #ifndef MASTER_H
 #define MASTER_H
 #define  _GNU_SOURCE
-#include <stdio.h>
 #include "../../communication/include/pipe.h"
+#include "../../communication/include/shared_mem.h"
 #include <sys/wait.h>
 #include "../../include/utils.h"
 #include <signal.h>

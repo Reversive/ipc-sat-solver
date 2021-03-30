@@ -11,4 +11,8 @@
 #define SYS_FAILURE -1
 #define SELECT_FAILURE -13
 #define FD_ISSET_FAILURE -14
+#define SHM_OPEN_FAILURE -15
+#define FTRUNCATE_FAILURE -16
+#define MMAP_FAILURE -17
+#define UNLINK_FAILURE -18
 #endif
