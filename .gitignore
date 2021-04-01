@@ -5,6 +5,7 @@ master
 view
 .bash_history
 result.txt
+samples
 # Prerequisites
 *.d
 
