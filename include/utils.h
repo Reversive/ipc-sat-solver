@@ -14,6 +14,7 @@
 #define PATH_BUFFER_LIMIT 1024
 #define QUEUE_START 0
 #define QUEUE_EMPTY 0
+#define MAX_PATH_CHARS 5
 
 enum STATUS { STOP = 0, RUNNING };
 

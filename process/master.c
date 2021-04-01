@@ -31,7 +31,7 @@ int main(
     set_slaves_status(slaves_status, slave_count, RUNNING);
     int slaves_running = get_running_slaves_count(slaves_status, slave_count);
     int is_pipe_closed = 0;
-    char string_path_count[5]={0};
+    char string_path_count[MAX_PATH_CHARS]={0};
     sprintf(string_path_count, "%d", path_count);
     write_buffer_to_shared_memory(shm_data, strlen(string_path_count), string_path_count ); 
     while(slaves_running > 0)
