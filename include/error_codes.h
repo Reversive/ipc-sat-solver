@@ -15,4 +15,5 @@
 #define FTRUNCATE_FAILURE -16
 #define MMAP_FAILURE -17
 #define UNLINK_FAILURE -18
+#define SEMAPHORE_FAILURE -19
 #endif

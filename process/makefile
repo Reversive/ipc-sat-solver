@@ -27,7 +27,7 @@ $(MASTER_OUT): $(COMMUNICATION_OBJECTS) $(UTILS_OBJECTS) $(PROCESS_OBJECTS)
 
 $(SLAVE_OUT): $(COMMUNICATION_OBJECTS)  $(UTILS_OBJECTS) $(SLAVE_OBJECTS)
 
-$(VIEW_OUT): $(VIEW_OBJECTS)
+$(VIEW_OUT): $(COMMUNICATION_OBJECTS)  $(UTILS_OBJECTS) $(VIEW_OBJECTS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -I./include -c $< -o $@ $(LDFLAGS) 
@@ -37,7 +37,6 @@ bin_move:
 	mv $(MASTER_OUT) bin/
 	mv $(SLAVE_OUT) bin/
 	mv $(VIEW_OUT) ..
-	rm -rf *.o
 
 clean:
 	rm -rf *.o bin/

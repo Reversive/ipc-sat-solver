@@ -22,21 +22,19 @@ int main(
             exit(EXIT_FAILURE);
         }
         
-        char payload[MAX_FILE_SIZE + NULL_TERMINATOR];
-
-        rewind(fp);
+        char payload[MAX_FILE_SIZE] = {0};
 
         size_t last_pos = fread(payload, sizeof(char), MAX_FILE_SIZE, fp);
-
+        remove_char(payload, '\n');
         if(ferror( fp ) != 0 ) {
             perror("Unexpected problem reading file");
             exit(EXIT_FAILURE);
         }
         else
         {
-            payload[last_pos] = '*';
+            strcat(payload, "*");
         }
-
+        
         pclose(fp);
         write_fd(STDOUT, payload, last_pos);
     }

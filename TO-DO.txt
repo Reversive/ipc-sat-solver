@@ -1,7 +1,7 @@
 master
     - [X] break-loop conditions (select() while loop)
     - [X] queue files to non-working slaves
-    - [ ] add view support (shared mem)
+    - [X] add view support (shared mem)
     - [X] write all slave outputs to a file
     - [X] FIX MASTER WHEN HAVING MORE THAN 1 SLAVE RUNNING
     - [X] Add fopen check
@@ -9,4 +9,5 @@ master
 
 slave
     - [X] sat solving
+    - [ ] send a better output than the grep result
 

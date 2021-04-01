@@ -11,16 +11,16 @@ int main(
     int argc, 
     char **argv) 
 {
-    sleep(VIEW_SLEEP_INTERVAL);
     setbuf(stdout, NULL);
     int path_count = argc;
     char **paths = argv;
     int slave_count = path_count >= MAX_SLAVE_COUNT ? MAX_SLAVE_COUNT : path_count;
-    /*int shm_size = path_count * MAX_BUFFER_SIZE;
     int shm_object = open_shared_mem_object(NAME, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR);
-    extend_shared_mem(shm_object, shm_size);
-    void *shm_data = map_shared_memory(NULL, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_object, 0);
-    unlink_shared_memory(NAME);*/
+    extend_shared_mem(shm_object, sizeof(shm_buffer));
+    shm_buffer *shm_data = map_shared_memory(NULL, sizeof(*shm_data), PROT_READ | PROT_WRITE, MAP_SHARED, shm_object, 0);
+    init_shared_mem_data(shm_data, 0);
+    init_semaphore(&shm_data->bouncer, PROCESS_SHARED, 0);
+    sleep(VIEW_SLEEP_INTERVAL);
     open_pipe_array(master_to_slave_pipe_array, slave_count);
     open_pipe_array(slave_to_master_pipe_array, slave_count);
     distribute_and_cache_paths(master_to_slave_pipe_array, paths, path_count, slave_count);
@@ -34,10 +34,10 @@ int main(
 
     while(slaves_running > 0)
     {
-        fd_set read_fds;
-        FD_ZERO(&read_fds);
-        int fdmax = set_pipe_array(slave_to_master_pipe_array, &read_fds, slave_count);
-        int retval = select(fdmax, &read_fds, NULL, NULL, NULL);
+        fd_set fd_reads;
+        FD_ZERO(&fd_reads);
+        int fdmax = set_pipe_array(slave_to_master_pipe_array, &fd_reads, slave_count);
+        int retval = select(fdmax, &fd_reads, NULL, NULL, NULL);
         if(retval == SYS_FAILURE)
         {
             perror("select()");
@@ -47,11 +47,11 @@ int main(
         {
             for(int current_slave = 0; current_slave < slave_count; current_slave++)
             {
-                int read_fd = slave_to_master_pipe_array[current_slave * PIPE_SIZE + READ];
-                int write_fd = master_to_slave_pipe_array[current_slave * PIPE_SIZE + WRITE];
-                if(FD_ISSET(read_fd, &read_fds))
+                int fd_read = slave_to_master_pipe_array[current_slave * PIPE_SIZE + READ];
+                int fd_write = master_to_slave_pipe_array[current_slave * PIPE_SIZE + WRITE];
+                if(FD_ISSET(fd_read, &fd_reads))
                 {
-                    int bytes_read = read(read_fd, sc[current_slave].buffer + sc[current_slave].pos , CHUNK_SIZE);
+                    int bytes_read = read(fd_read, sc[current_slave].buffer + sc[current_slave].pos , CHUNK_SIZE);
                     if(bytes_read == SYS_FAILURE)
                     {
                         perror("read()");
@@ -66,10 +66,11 @@ int main(
                         char *delimiter_offset = strchr(sc[current_slave].buffer, DELIM);
                         if(delimiter_offset != NULL)
                         {
-                            int size = delimiter_offset - sc[current_slave].buffer - DELIMITER;
-                            write_buffer_to_file("result.txt", "a", size, sc, current_slave);                          
+                            int size = delimiter_offset - sc[current_slave].buffer;
+                            write_buffer_to_file("result.txt", "a", size, sc, current_slave);
+                            write_buffer_to_shared_memory(shm_data, size, sc[current_slave].buffer);        
                             fix_internal_buffer(current_slave, sc, delimiter_offset);
-                            poll_queue_next_path(&is_pipe_closed, write_fd, slave_count);
+                            poll_queue_next_path(&is_pipe_closed, fd_write, slave_count);
                         }
                         else
                         {
@@ -77,11 +78,13 @@ int main(
                         }
                     }
                     else if(bytes_read < CHUNK_SIZE)
-                    {                 
+                    {
+                        
                         int size = sc[current_slave].pos + bytes_read - DELIMITER;
+                        write_buffer_to_shared_memory(shm_data, size, sc[current_slave].buffer);
                         write_buffer_to_file("result.txt", "a", size, sc, current_slave);
                         reset_container(sc, current_slave);
-                        poll_queue_next_path(&is_pipe_closed, write_fd, slave_count);
+                        poll_queue_next_path(&is_pipe_closed, fd_write, slave_count);
                     }
                 }
                 
@@ -97,18 +100,29 @@ int main(
         int fr;
         waitpid(slave_pid[current_slave], &fr, 0);
     }
-
+    unmap_shared_memory(shm_data, sizeof(*shm_data));
+    unlink_shared_memory(NAME);
 }
 
 
+void write_buffer_to_shared_memory(
+    shm_buffer * dest, 
+    int size, 
+    char * buffer)
+{
+    dest->size[dest->write_position] = size;
+    memcpy(dest->buffer[dest->write_position++], buffer, size);
+    post_semaphore(&dest->bouncer);
+}
+
 void poll_queue_next_path(
     int * is_pipe_closed,
-    int write_fd,
+    int fd_write,
     int slave_count)
 {
     if(queue.queue_pos < queue.queue_size)
     {
-        queue_next_path(write_fd, queue.file_buffer, queue.queue_pos);
+        queue_next_path(fd_write, queue.file_buffer, queue.queue_pos);
         queue.queue_pos++;
     }
     else if(!*is_pipe_closed)
@@ -144,7 +158,7 @@ void write_buffer_to_file(
         exit(EXIT_FAILURE);
     }
     fwrite(sc[current_slave].buffer, sizeof(char), size, fp);
-    fwrite("\n", sizeof(char), BYTE, fp);
+    fwrite("\n\n", sizeof(char), 2, fp);
     if( ferror( fp ) != 0 )
     {
         perror("Unexpected problem writing file");
@@ -160,10 +174,10 @@ void fix_internal_buffer(
 {
     char * chunk_pos = sc[idx].buffer + sc[idx].pos;
     int new_file_pos = CHUNK_SIZE -  (delim_offset - chunk_pos) ;
-    char tmp[new_file_pos - DELIMITER];
-    memcpy(tmp, chunk_pos + CHUNK_SIZE - new_file_pos + DELIMITER, new_file_pos - DELIMITER);
+    char tmp[new_file_pos];
+    memcpy(tmp, chunk_pos + CHUNK_SIZE - new_file_pos + DELIMITER, new_file_pos);
     reset_container(sc, idx);
-    memcpy(sc[idx].buffer, tmp, new_file_pos - DELIMITER);
+    memcpy(sc[idx].buffer, tmp, new_file_pos);
     sc[idx].pos = new_file_pos - DELIMITER;
 }
 

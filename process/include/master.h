@@ -15,14 +15,14 @@
 #define STDOUT 1
 
 #define STARTING_FILE_LIMIT 30
-#define CHUNK_SIZE 100
+#define CHUNK_SIZE 8
 
 #define KILL_SIGNAL 9
 
 #define MAX_SLAVE_COUNT 15
 #define PIPE_ARRAY_SIZE PIPE_SIZE * MAX_SLAVE_COUNT 
 
-#define VIEW_SLEEP_INTERVAL 2
+#define VIEW_SLEEP_INTERVAL 4
 
 
 void distribute_and_cache_paths(int * pipes, char ** path_list, int path_count, int slave_count);
@@ -35,4 +35,5 @@ void fix_internal_buffer(int idx, slave_container * sc, char * delim_offset);
 void set_slaves_status(int * slave_status, int slave_count, enum STATUS status);
 int get_running_slaves_count(int * slave_status, int slave_count);
 void write_buffer_to_file(char * path, char * flag, int size, slave_container * sc, int current_slave);
+void write_buffer_to_shared_memory(shm_buffer * dest, int size, char *buffer);
 #endif

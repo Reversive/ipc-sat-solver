@@ -10,7 +10,7 @@
 #define FIRST_ARG 1
 #define SUCCESS 1
 #define FAILURE 0
-#define MAX_BUFFER_SIZE 16384
+#define MAX_BUFFER_SIZE 8192
 #define PATH_BUFFER_LIMIT 1024
 #define QUEUE_START 0
 #define QUEUE_EMPTY 0
