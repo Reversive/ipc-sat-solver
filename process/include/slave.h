@@ -9,5 +9,5 @@
 #define STDOUT 1
 #define MAX_FILE_SIZE 16384
 #define MAX_PATH_SIZE 1024
-
+#define SAT_SIZE 20
 #endif

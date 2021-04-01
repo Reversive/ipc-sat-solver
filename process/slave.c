@@ -36,7 +36,17 @@ int main(
         }
         
         pclose(fp);
-        write_fd(STDOUT, payload, last_pos);
+
+        int pid = getpid();
+        char results[MAX_BUFFER_SIZE];
+        int num_var, num_clauses;
+        float cpu_time;
+        char sat[SAT_SIZE]={0};
+        sscanf(payload, "%d\t%d\t%f\t%s", &num_var, &num_clauses, &cpu_time, sat);
+        sat[strlen(sat)-1] = 0;
+        sprintf(results, "File: %s\nPID: %d\nNumber of variables: %d\nNumber of clauses: %d\nCPU Time: %f\n%s\n\n", path, pid, num_var, num_clauses, cpu_time, sat);
+        
+        write_fd(STDOUT, results, strlen(results));
     }
 
     if(errno == SYS_FAILURE)
