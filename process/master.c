@@ -19,6 +19,7 @@ int main(
     extend_shared_mem(shm_object, sizeof(shm_buffer));
     shm_buffer *shm_data = map_shared_memory(NULL, sizeof(*shm_data), PROT_READ | PROT_WRITE, MAP_SHARED, shm_object, 0);
     init_shared_mem_data(shm_data, 0);
+    shm_data->path_count = path_count;
     init_semaphore(&shm_data->bouncer, PROCESS_SHARED, 0);
     sleep(VIEW_SLEEP_INTERVAL);
     open_pipe_array(master_to_slave_pipe_array, slave_count);
@@ -31,9 +32,7 @@ int main(
     set_slaves_status(slaves_status, slave_count, RUNNING);
     int slaves_running = get_running_slaves_count(slaves_status, slave_count);
     int is_pipe_closed = 0;
-    char string_path_count[MAX_PATH_CHARS]={0};
-    sprintf(string_path_count, "%d", path_count);
-    write_buffer_to_shared_memory(shm_data, strlen(string_path_count), string_path_count ); 
+
     while(slaves_running > 0)
     {
         fd_set fd_reads;

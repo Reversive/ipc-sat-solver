@@ -18,6 +18,7 @@ typedef struct {
     sem_t  bouncer;
     int write_position;
     int read_position;
+    int path_count;
     char buffer[PATH_BUFFER_LIMIT][MAX_BUFFER_SIZE];
     int size[PATH_BUFFER_LIMIT];
 } shm_buffer;

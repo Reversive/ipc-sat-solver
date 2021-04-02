@@ -44,7 +44,7 @@ int main(
         char sat[SAT_SIZE]={0};
         sscanf(payload, "%d\t%d\t%f\t%s", &num_var, &num_clauses, &cpu_time, sat);
         sat[strlen(sat)-1] = 0;
-        sprintf(results, "File: %s\nPID: %d\nNumber of variables: %d\nNumber of clauses: %d\nCPU Time: %f\n%s\n\n", path, pid, num_var, num_clauses, cpu_time, sat);
+        sprintf(results, "File: %s\nPID: %d\nNumber of variables: %d\nNumber of clauses: %d\nCPU Time: %f\n%s\n*", path, pid, num_var, num_clauses, cpu_time, sat);
         
         write_fd(STDOUT, results, strlen(results));
     }
