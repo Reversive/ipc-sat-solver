@@ -18,6 +18,4 @@ int main(
         status = shm_data->read_position < shm_data->path_count ? RUNNING : STOP;
         printf("%s\n", result);
     }
-
-    printf("Finished\n");
 }

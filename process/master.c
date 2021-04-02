@@ -103,8 +103,7 @@ int main(
     }
     unmap_shared_memory(shm_data, sizeof(*shm_data));
     unlink_shared_memory(NAME);
-    // close(shm_data);
-    // return 0;
+    return 0;
 }
 
 
