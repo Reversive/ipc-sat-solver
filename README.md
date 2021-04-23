@@ -9,8 +9,10 @@ $ make
 ```
 $ make clean
 ```
-
-
+## Requirements
+```
+$ apt-get install minisat
+```
 ## Usage
 ```
 $ ./solve "path_to_cnf_files"
